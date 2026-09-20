@@ -10,6 +10,8 @@ BYBIT_API_KEY = INITIAL_KEY
 BYBIT_API_SECRET = INITIAL_SECRET
 TESTNET = INITIAL_TESTNET
 
+active_symbol = "BTCUSDT"
+
 # Inisialisasi Client Bybit API
 session = HTTP(
     testnet=TESTNET,
@@ -18,6 +20,16 @@ session = HTTP(
 )
 
 bot_is_running = False
+
+def set_active_symbol(symbol: str):
+    """Mengganti koin/symbol trading yang aktif secara dinamis."""
+    global active_symbol
+    active_symbol = symbol.strip().upper()
+    print(f"🪙 Koin trading aktif diubah ke: {active_symbol}")
+    return {"status": "SUCCESS", "message": f"Koin trading aktif diubah ke {active_symbol}"}
+
+def get_active_symbol():
+    return active_symbol
 
 def update_bybit_credentials(api_key: str, api_secret: str, testnet: bool = True):
     """Memperbarui kredensial API Bybit secara dinamis langsung dari Aplikasi Android."""
@@ -190,12 +202,12 @@ def get_market_analysis(symbol="BTCUSDT"):
     }
 
 def analyze_and_trade():
-    global bot_is_running
-    symbol = "BTCUSDT"
+    global bot_is_running, active_symbol
 
-    print("🤖 Bot Trading Aktif! Menganalisa Market (Sistem Turtle Traders & Multi-Indikator)...")
+    print(f"🤖 Bot Trading Aktif! Menganalisa Market {active_symbol} (Sistem Turtle Traders & Multi-Indikator)...")
 
     while bot_is_running:
+        symbol = active_symbol
         try:
             df = get_historical_data(symbol, interval="15", limit=100)
             if df is not None and len(df) >= 50:
@@ -221,7 +233,9 @@ def analyze_and_trade():
 
                 sl_distance = 2.0 * atr if not pd.isna(atr) else (current_price * 0.01)
                 tp_distance = 2.0 * sl_distance
-                qty = 0.001
+
+                # Qty lot dinamis per koin
+                qty = 0.001 if symbol == "BTCUSDT" else (0.01 if symbol == "ETHUSDT" else 0.1)
 
                 is_golden_cross = (ema_50 > ema_200) and (prev['EMA_50'] <= prev['EMA_200'])
                 is_bb_breakout_up = (current_price > bb_upper)
@@ -231,7 +245,7 @@ def analyze_and_trade():
                     sl_price = round(current_price - sl_distance, 2)
                     tp_price = round(current_price + tp_distance, 2)
 
-                    print(f"🟢 Sinyal LONG (BUY) Terdeteksi! Harga: ${current_price}, SL: ${sl_price}, TP: ${tp_price}")
+                    print(f"🟢 Sinyal LONG (BUY) {symbol} Terdeteksi! Harga: ${current_price}, SL: ${sl_price}, TP: ${tp_price}")
 
                     if len(BYBIT_API_KEY) > 8 and "MASUKKAN" not in BYBIT_API_KEY:
                         try:
@@ -250,7 +264,7 @@ def analyze_and_trade():
                     sl_price = round(current_price + sl_distance, 2)
                     tp_price = round(current_price - tp_distance, 2)
 
-                    print(f"🔴 Sinyal SHORT (SELL) Terdeteksi! Harga: ${current_price}, SL: ${sl_price}, TP: ${tp_price}")
+                    print(f"🔴 Sinyal SHORT (SELL) {symbol} Terdeteksi! Harga: ${current_price}, SL: ${sl_price}, TP: ${tp_price}")
 
                     if len(BYBIT_API_KEY) > 8 and "MASUKKAN" not in BYBIT_API_KEY:
                         try:

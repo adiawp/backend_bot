@@ -12,6 +12,9 @@ class BybitConfigRequest(BaseModel):
     api_secret: str
     testnet: bool = True
 
+class SymbolRequest(BaseModel):
+    symbol: str
+
 @app.on_event("startup")
 def startup_event():
     database.init_db()
@@ -43,8 +46,17 @@ def get_bot_status():
 @app.get("/bot/balance")
 @app.get("/bot/balance/")
 def get_bybit_balance():
-    # Endpoint untuk mengambil Saldo Dompet Bybit
     return bot_logic.get_bybit_wallet_balance()
+
+@app.post("/bot/symbol")
+@app.post("/bot/symbol/")
+def set_symbol(req: SymbolRequest):
+    return bot_logic.set_active_symbol(req.symbol)
+
+@app.get("/bot/symbol")
+@app.get("/bot/symbol/")
+def get_symbol():
+    return {"symbol": bot_logic.get_active_symbol()}
 
 @app.post("/bot/config")
 @app.post("/bot/config/")
