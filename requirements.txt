@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pybit>=5.7.0
+pandas
+numpy
+python-dotenv
